@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders', 
 
+
     # Your Application
     'core',  # <--- CRITICAL: This allows Django to find your app
 ]

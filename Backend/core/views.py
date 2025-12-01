@@ -15,6 +15,12 @@ from .serializers import ProductSerializer, ShoppingListSerializer, ScanSerializ
 # Import the custom modules you created
 from .services import optimization, sustainability 
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import ScanSerializer
+from .services.sustainability import SustainabilityService
+
 
 # ------------------- Product Endpoints (Scanning & Data) -------------------
 
@@ -179,3 +185,61 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
         except Product.DoesNotExist:
             return Response({"error": "Product not found"}, status=404)
+
+    @action(detail=True, methods=['post'], url_path='add-item')
+    def add_item(self, request, pk=None):
+        """
+        Endpoint para recibir un producto y agregarlo a la lista
+        """
+        shopping_list = self.get_object()
+        
+        # 1. Obtener datos del frontend
+        product_id = request.data.get('product_id')
+        quantity = int(request.data.get('quantity', 1))
+
+        if not product_id:
+            return Response({"error": "Falta product_id"}, status=400)
+
+        # 2. Verificar que el producto exista
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return Response({"error": "El producto no existe en la base de datos local"}, status=404)
+
+        # 3. Crear o actualizar el item en la lista
+        item, created = ListItem.objects.get_or_create(
+            shopping_list=shopping_list,
+            product=product,
+            defaults={'quantity': quantity}
+        )
+
+        if not created:
+            # Si ya existía, sumamos la cantidad
+            item.quantity += quantity
+            item.save()
+
+        # 4. Devolver la lista actualizada
+        serializer = self.get_serializer(shopping_list)
+        return Response(serializer.data)        
+
+
+class ProductScanView(APIView):
+    """
+    Vista simple para manejar el escaneo/búsqueda de productos
+    """
+    def post(self, request):
+        serializer = ScanSerializer(data=request.data)
+        if serializer.is_valid():
+            # Obtener el término de búsqueda o código de barras
+            query = serializer.validated_data.get('search_query') or serializer.validated_data.get('barcode')
+            
+            # Llamar a tu servicio (la lógica que ya creamos)
+            service = SustainabilityService()
+            product_data = service.fetch_product_data(barcode=query)
+            
+            if product_data:
+                return Response(product_data, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Producto no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

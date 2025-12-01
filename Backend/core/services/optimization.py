@@ -1,71 +1,91 @@
 # core/services/optimization.py
+from decimal import Decimal
+from ..models import ShoppingList, ListItem
 
-from ..models import ShoppingList, ListItem, Product # Import necessary models
-
-# core/services/optimization.py
-
-def run_knapsack_optimization(shopping_list, budget_limit):
+class OptimizationService:
     """
-    Algoritmo de Mochila (Knapsack Problem).
-    Intenta maximizar el 'Puntaje Ecológico' respetando el presupuesto.
+    Servicio que implementa el Algoritmo de Mochila Multi-objetivo.
     """
-    items = shopping_list.items.all()
-    
-    # 1. Preparar datos
-    # Valor (Beneficio) = Inverso de huella de carbono (menos carbono es mejor)
-    # Peso (Costo) = Precio del producto
-    
-    n = len(items)
-    budget = int(budget_limit) # El algoritmo clásico trabaja mejor con enteros
-    
-    # precios y 'valores' ecológicos
-    prices = [int(item.product.price) for item in items]
-    
-    # Valor: Le damos más puntos a productos con menos CO2
-    # Si CO2 es 0.5kg, valor es alto. Si es 50kg, valor es bajo.
-    eco_values = [int(100 / (item.product.carbon_footprint + 0.1)) for item in items]
 
-    # 2. Matriz de Programación Dinámica (DP)
-    # K[i][w] guardará el mejor valor ecológico posible con i items y presupuesto w
-    K = [[0 for x in range(budget + 1)] for x in range(n + 1)]
+    def run_optimization(self, shopping_list, budget_limit, weight_price=0.5, weight_eco=0.5):
+        """
+        Ejecuta Knapsack Problem (0/1) considerando DOS objetivos:
+        1. Minimizar gasto (o maximizar valor por dinero).
+        2. Maximizar sustentabilidad.
+        
+        weight_price (0.0 - 1.0): Qué tanto le importa el ahorro al usuario.
+        weight_eco (0.0 - 1.0): Qué tanto le importa el planeta.
+        """
+        items = list(shopping_list.items.all()) # Convertir QuerySet a lista
+        n = len(items)
+        budget = int(budget_limit)
+        
+        # Validación de seguridad
+        if n == 0 or budget <= 0:
+            return {'optimized_items': [], 'total_savings': 0}
 
-    for i in range(n + 1):
-        for w in range(budget + 1):
-            if i == 0 or w == 0:
-                K[i][w] = 0
-            elif prices[i-1] <= w:
-                # Decisión: ¿Incluimos el item o no?
-                # Max entre (Valor de este item + mejor valor con el resto del dinero) vs (No incluirlo)
-                K[i][w] = max(eco_values[i-1] + K[i-1][w-prices[i-1]],  K[i-1][w])
-            else:
-                K[i][w] = K[i-1][w]
-
-    # 3. Reconstruir la solución (¿Qué items elegimos?)
-    res = K[n][budget]
-    w = budget
-    selected_items = []
-    total_cost = 0
-
-    for i in range(n, 0, -1):
-        if res <= 0:
-            break
-        if res == K[i-1][w]:
-            continue
-        else:
-            # Este item fue seleccionado
-            selected_items.append(items[i-1].product.name)
-            total_cost += items[i-1].product.price
+        # 1. PREPARACIÓN DE VECTORES
+        prices = [int(item.product.price) for item in items]
+        
+        # Aquí está la magia "Multi-objetivo":
+        # Calculamos el "Valor" (Utility) de cada producto combinando sus atributos.
+        # Un producto es valioso si: Es barato (para el usuario ahorrador) Y es ecológico.
+        values = []
+        for item in items:
+            # Normalizamos precio inverso (0-100 aprox): Más barato = Más puntos
+            # Asumimos un precio maximo de referencia de 20000 para normalizar
+            price_score = max(0, 100 - (item.product.price / 200)) 
             
-            res = res - eco_values[i-1]
-            w = w - prices[i-1]
+            # Score ecológico (ya viene calculado 0-100 en el modelo o se calcula al vuelo)
+            eco_score = getattr(item.product, 'sustainability_score', 50) 
+            
+            # COMBINACIÓN PONDERADA
+            combined_value = (price_score * weight_price) + (eco_score * weight_eco)
+            values.append(int(combined_value))
 
-    # 4. Retornar resultados
-    # Calculamos el ahorro como la diferencia entre el total original y el optimizado
-    original_total = sum(item.product.price for item in items)
-    
-    return {
-        'optimized_items': selected_items,
-        'total_cost': total_cost,
-        'total_savings': original_total - total_cost, # Ahorro simple (dinero no gastado)
-        'eco_score_total': K[n][budget]
-    }
+        # 2. ALGORITMO KNAPSACK (Programación Dinámica)
+        # K[i][w] = Máximo valor conseguido con primeros i items y peso w
+        K = [[0 for x in range(budget + 1)] for x in range(n + 1)]
+
+        for i in range(n + 1):
+            for w in range(budget + 1):
+                if i == 0 or w == 0:
+                    K[i][w] = 0
+                elif prices[i-1] <= w:
+                    # Decisión: Max(Incluir item, No incluir item)
+                    include_val = values[i-1] + K[i-1][w-prices[i-1]]
+                    exclude_val = K[i-1][w]
+                    K[i][w] = max(include_val, exclude_val)
+                else:
+                    K[i][w] = K[i-1][w]
+
+        # 3. RECONSTRUCCIÓN (Backtracking para ver qué items ganaron)
+        res = K[n][budget]
+        w = budget
+        selected_ids = []
+        total_cost = 0
+        original_cost = sum(prices)
+
+        for i in range(n, 0, -1):
+            if res <= 0: break
+            if res == K[i-1][w]:
+                continue
+            else:
+                # Item seleccionado
+                item = items[i-1]
+                selected_ids.append(item.id)
+                total_cost += item.product.price
+                
+                res = res - values[i-1]
+                w = w - prices[i-1]
+
+        # 4. RESULTADO
+        # En una app real, marcaríamos los items como "seleccionados" en la DB.
+        return {
+            'kept_items_count': len(selected_ids),
+            'original_cost': original_cost,
+            'optimized_cost': total_cost,
+            'total_savings': original_cost - total_cost,
+            'eco_utility_score': K[n][budget],
+            'selected_item_ids': selected_ids
+        }
