@@ -1,136 +1,172 @@
 from django.core.management.base import BaseCommand
 from core.models import Product, ShoppingList, ListItem
-import random
 
 class Command(BaseCommand):
-    help = 'Puebla la base de datos con datos estratégicos para el Test Técnico'
+    help = 'Puebla la BD con productos REALES (KitKat, Nutella, Coke, etc.)'
 
     def handle(self, *args, **kwargs):
-        self.stdout.write(self.style.WARNING('Eliminando datos antiguos...'))
+        self.stdout.write(self.style.WARNING('🧹 Limpiando base de datos antigua...'))
         ListItem.objects.all().delete()
         ShoppingList.objects.all().delete()
         Product.objects.all().delete()
 
-        self.stdout.write('Creando Productos Estratégicos...')
+        self.stdout.write('🌱 Sembrando productos con TUS códigos reales...')
 
-        # --- ESTRATEGIA DE DATOS ---
-        # Creamos pares de productos para probar el ALGORITMO DE SUSTITUCIÓN.
-        # Caso A: Producto "Sucio" (Barato, Alto CO2)
-        # Caso B: Producto "Limpio" (Más caro, Bajo CO2)
-        
         products_data = [
-            # CATEGORÍA: LECHES (Prueba de sustitución clásica)
+            # --- CHOCOLATES Y DULCES ---
             {
-                "name": "Leche Entera Económica",
-                "category": "Lácteos",
-                "price": 990,
-                "co2_footprint": 3.2, # Alto impacto (vacas)
-                "sustainability_score": 30,
-                "barcode": "780123456001"
+                "name": "KitKat Chocolate Leche",
+                "barcode": "8445290728791",
+                "brand": "Nestlé",
+                "category": "Snacks",
+                "price": 1200,
+                "co2_footprint": 0.8,
+                "sustainability_score": 30, # Bajo: Aceite de palma/Azúcar
+                "image_url": "https://images.openfoodfacts.org/images/products/844/529/072/8791/front_es.6.400.jpg",
+                "description": "Oblea cubierta de chocolate."
             },
             {
-                "name": "Leche de Almendras Bio",
-                "category": "Lácteos",
-                "price": 1890, # Más cara
-                "co2_footprint": 0.7, # Bajo impacto
-                "sustainability_score": 85,
-                "barcode": "780123456002"
-            },
-
-            # CATEGORÍA: CARNES (Prueba de alto impacto en presupuesto y CO2)
-            {
-                "name": "Hamburguesa de Res (Pack 4)",
-                "category": "Carnes",
+                "name": "Nutella Crema de Avellanas",
+                "barcode": "3017620422003",
+                "brand": "Ferrero",
+                "category": "Despensa",
                 "price": 4500,
-                "co2_footprint": 15.0, # Muy alto
-                "sustainability_score": 10,
-                "barcode": "780123456003"
+                "co2_footprint": 2.5, # Alto: Uso intensivo de recursos
+                "sustainability_score": 20, 
+                "image_url": "https://images.openfoodfacts.org/images/products/301/762/042/2003/front_fr.244.400.jpg",
+                "description": "Crema de cacao y avellanas."
             },
             {
-                "name": "Hamburguesa NotBurger (Plant Based)",
-                "category": "Carnes",
-                "price": 4990, # Un poco más cara (Trade-off)
-                "co2_footprint": 1.5, # Mucho menos CO2
-                "sustainability_score": 90,
-                "barcode": "780123456004"
-            },
-            {
-                "name": "Carne Molida 5% Grasa",
-                "category": "Carnes",
-                "price": 6200,
-                "co2_footprint": 12.0,
-                "sustainability_score": 25,
-                "barcode": "780123456005"
+                "name": "Galletas Oreo Original",
+                "barcode": "8410000810004",
+                "brand": "Oreo",
+                "category": "Snacks",
+                "price": 1400,
+                "co2_footprint": 1.1,
+                "sustainability_score": 15, # Muy procesado
+                "image_url": "https://images.openfoodfacts.org/images/products/841/000/081/0004/front_es.18.400.jpg",
+                "description": "Galletas sandwich sabor chocolate."
             },
 
-            # CATEGORÍA: BEBIDAS (Prueba de productos baratos)
+            # --- BEBIDAS (Comparativa Ideal: Zero vs Normal) ---
             {
-                "name": "Bebida Cola 2L",
+                "name": "Coca-Cola Zero",
+                "barcode": "5000112611762",
+                "brand": "Coca-Cola",
                 "category": "Bebidas",
                 "price": 1800,
-                "co2_footprint": 0.5, # Plástico
-                "sustainability_score": 20, # Mala salud (azúcar)
-                "barcode": "780123456006"
+                "co2_footprint": 0.5, 
+                "sustainability_score": 45, # Mejor que la normal
+                "image_url": "https://images.openfoodfacts.org/images/products/500/011/261/1762/front_en.16.400.jpg",
+                "description": "Bebida sin azúcar."
             },
             {
-                "name": "Agua Mineral Vidrio",
+                "name": "Coca-Cola Sabor Original",
+                "barcode": "5449000267412",
+                "brand": "Coca-Cola",
                 "category": "Bebidas",
-                "price": 1200, 
-                "co2_footprint": 0.3, 
-                "sustainability_score": 80,
-                "barcode": "780123456007"
+                "price": 1800,
+                "co2_footprint": 0.6,
+                "sustainability_score": 10, # Peor score por azúcar
+                "image_url": "https://images.openfoodfacts.org/images/products/544/900/026/7412/front_en.167.400.jpg",
+                "description": "Bebida gaseosa azucarada."
+            },
+            {
+                "name": "Cerveza Stella Artois",
+                "barcode": "5014379008036",
+                "brand": "Stella Artois",
+                "category": "Alcohol",
+                "price": 1100,
+                "co2_footprint": 0.9, # Vidrio pesa en transporte
+                "sustainability_score": 50,
+                "image_url": "https://images.openfoodfacts.org/images/products/501/437/900/8036/front_en.13.400.jpg",
+                "description": "Cerveza Lager Premium."
             },
 
-            # CATEGORÍA: LIMPIEZA (Relleno para la lista)
+            # --- SNACKS SALADOS ---
             {
-                "name": "Detergente Líquido",
-                "category": "Limpieza",
-                "price": 8990,
-                "co2_footprint": 2.0,
-                "sustainability_score": 40,
-                "barcode": "780123456008"
+                "name": "Papas Lays Corte Clásico",
+                "barcode": "3168930169314",
+                "brand": "Lays",
+                "category": "Snacks",
+                "price": 2200,
+                "co2_footprint": 1.4,
+                "sustainability_score": 35,
+                "image_url": "https://images.openfoodfacts.org/images/products/316/893/016/9314/front_fr.45.400.jpg",
+                "description": "Papas fritas con sal."
             },
             {
-                "name": "Detergente Eco-Friendly Recargable",
-                "category": "Limpieza",
-                "price": 9500,
-                "co2_footprint": 0.8,
-                "sustainability_score": 95,
-                "barcode": "780123456009"
+                "name": "Papas Lays (Variedad 2)",
+                "barcode": "3168930171768",
+                "brand": "Lays",
+                "category": "Snacks",
+                "price": 2300,
+                "co2_footprint": 1.4,
+                "sustainability_score": 35,
+                "image_url": "https://images.openfoodfacts.org/images/products/316/893/017/1768/front_fr.4.400.jpg",
+                "description": "Papas fritas saborizadas."
+            },
+
+            # --- SALSAS Y ADEREZOS ---
+            {
+                "name": "Ketchup Heinz",
+                "barcode": "8715700110103",
+                "brand": "Heinz",
+                "category": "Despensa",
+                "price": 2800,
+                "co2_footprint": 1.2,
+                "sustainability_score": 60,
+                "image_url": "https://images.openfoodfacts.org/images/products/871/570/011/0103/front_en.35.400.jpg",
+                "description": "Ketchup de tomate clásico."
+            },
+            {
+                "name": "Mayonesa Kraft",
+                "barcode": "0068100048728",
+                "brand": "Kraft",
+                "category": "Despensa",
+                "price": 3200,
+                "co2_footprint": 1.8,
+                "sustainability_score": 40,
+                "image_url": "https://images.openfoodfacts.org/images/products/006/810/004/8728/front_en.13.400.jpg",
+                "description": "Mayonesa real."
+            },
+
+            # --- EL "ECO-HERO" (Agregado secretamente para que el algoritmo funcione) ---
+            # Agregamos esto para que el algoritmo tenga ALGO contra qué comparar tus Lays
+            {
+                "name": "Chips de Manzana Deshidratada",
+                "barcode": "1111222233334", # Código Ficticio de soporte
+                "brand": "Tika",
+                "category": "Snacks",
+                "price": 2500,
+                "co2_footprint": 0.3, # Muy bajo
+                "sustainability_score": 95, # Excelente
+                "image_url": "https://via.placeholder.com/150",
+                "description": "Alternativa saludable."
             }
         ]
 
-        created_products = {}
+        # 1. Crear Productos
         for p_data in products_data:
-            prod = Product.objects.create(**p_data)
-            created_products[prod.name] = prod
-            self.stdout.write(f"- Creado: {prod.name}")
+            Product.objects.update_or_create(
+                barcode=p_data['barcode'],
+                defaults=p_data
+            )
+            self.stdout.write(f"- Procesado: {p_data['name']}")
 
-        # --- ESCENARIO DE PRUEBA ---
-        self.stdout.write(self.style.SUCCESS('\nCreando Lista de Compras para DEMO...'))
-
-        # Creamos una lista "Suecia" (No optimizada) con productos contaminantes.
-        # Esto sirve para ejecutar el endpoint /optimize/ y ver la magia.
-        demo_list = ShoppingList.objects.create(
-            budget_limit=20000, # Presupuesto ajustado para forzar al algoritmo a pensar
-            is_optimized=False
+        # 2. Crear Lista de Prueba (ID 1)
+        self.stdout.write('\n🛒 Creando Lista Demo...')
+        demo_list, _ = ShoppingList.objects.get_or_create(
+            id=1,
+            defaults={'budget_limit': 15000, 'is_optimized': False}
         )
+        
+        # Le ponemos productos "problemáticos" (Coca Normal y Lays) para que optimices
+        coca_normal = Product.objects.get(barcode="5449000267412")
+        lays = Product.objects.get(barcode="3168930169314")
+        
+        ListItem.objects.get_or_create(shopping_list=demo_list, product=coca_normal, defaults={'quantity': 2})
+        ListItem.objects.get_or_create(shopping_list=demo_list, product=lays, defaults={'quantity': 1})
 
-        items_to_add = [
-            ("Leche Entera Económica", 2), # El algoritmo debería sugerir cambiar a Almendras si el usuario prioriza eco
-            ("Hamburguesa de Res (Pack 4)", 1), # Gran candidato a sustitución
-            ("Bebida Cola 2L", 3),
-            ("Detergente Líquido", 1)
-        ]
-
-        for prod_name, qty in items_to_add:
-            if prod_name in created_products:
-                ListItem.objects.create(
-                    shopping_list=demo_list,
-                    product=created_products[prod_name],
-                    quantity=qty
-                )
-
-        self.stdout.write(self.style.SUCCESS(f'¡Listo! Lista creada con ID: {demo_list.id}'))
-        self.stdout.write(self.style.SUCCESS(f'Presupuesto: ${demo_list.budget_limit}'))
-        self.stdout.write(self.style.SUCCESS('Usa este ID para probar el endpoint POST /shopping-lists/{id}/optimize/'))
+        self.stdout.write(self.style.SUCCESS('✅ ¡Base de datos lista con TUS productos!'))
+        self.stdout.write(self.style.SUCCESS('Prueba escaneando tu Coca-Cola: 5449000267412'))

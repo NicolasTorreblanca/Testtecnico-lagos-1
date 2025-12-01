@@ -10,16 +10,20 @@ const api = axios.create({
 
 // Endpoints organizados
 export const productService = {
-  // Buscar producto por código o nombre
   scan: (query) => api.post('/scan/', { search_query: query }),
-  
-  // Optimizar lista (Algoritmo Mochila)
   optimize: (listId, data) => api.post(`/shopping-lists/${listId}/optimize/`, data),
-  
-  // Obtener una lista específica
   getList: (id) => api.get(`/shopping-lists/${id}/`),
+  
+  // Agregar (Desde el Scanner)
+  addItem: (listId, productId, qty=1) => api.post(`/shopping-lists/${listId}/add-item/`, { 
+      product_id: productId, 
+      quantity: qty 
+  }),
 
-  addItem: (listId, productId, quantity=1) => api.post(`/shopping-lists/${listId}/add-item/`, { product_id: productId, quantity }),
+  // Eliminar (Desde la Lista) - NUEVO
+  removeItem: (listId, itemId) => api.post(`/shopping-lists/${listId}/remove-item/`, { 
+      item_id: itemId 
+  }),
 };
 
 

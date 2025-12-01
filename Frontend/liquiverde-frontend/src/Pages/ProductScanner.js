@@ -58,7 +58,7 @@ const ProductScanner = () => {
   return (
     <div className="page-content scanner-page">
       <h1>🔍 Escáner de Productos</h1>
-      <p>Ingresa un código de barras o nombre (ej: "Leche", "Carne", "780123456004")</p>
+      <p>Ingresa un código de barras(ej: "8715700110103", "5014379008036")</p>
 
       {/* Formulario de Búsqueda */}
       <form onSubmit={handleSearch} className="search-box">

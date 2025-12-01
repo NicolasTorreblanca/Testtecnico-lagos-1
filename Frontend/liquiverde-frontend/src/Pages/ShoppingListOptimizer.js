@@ -62,6 +62,24 @@ const ShoppingListOptimizer = () => {
     }
   };
 
+  const handleRemoveItem = async (itemId) => {
+    if(!window.confirm("¿Seguro que quieres sacar este producto?")) return;
+
+    try {
+        const res = await productService.removeItem(LIST_ID, itemId);
+        // Actualizamos la lista con la respuesta del servidor (que ya viene sin el item)
+        setItems(res.data.items);
+        // Actualizamos los precios totales
+        setStats({
+            total: res.data.total_price,
+            savings: res.data.total_savings || 0,
+            score: res.data.sustainability_grade || 'C'
+        });
+    } catch (err) {
+        alert("Error al eliminar item");
+    }
+  };
+
   return (
     <div className="page-content">
       <header className="page-header">
@@ -99,18 +117,22 @@ const ShoppingListOptimizer = () => {
           )}
         </div>
 
-        {/* Panel Derecho: Lista de Productos */}
-        <div className="right-panel">
+       {/* Panel Derecho: Lista de Productos */}
+      <div className="right-panel">
           <h3>Tu Lista ({items.length} productos)</h3>
           <div className="products-container">
             {items.map(item => (
-              <ProductCard key={item.id} item={item} />
+              <ProductCard 
+                key={item.id} 
+                item={item} 
+                onRemove={handleRemoveItem}  // <--- AQUÍ PASAMOS EL PODER DE BORRAR
+              />
             ))}
-            {items.length === 0 && <p className="empty-msg">Cargando productos...</p>}
+            {items.length === 0 && <p className="empty-msg">Tu lista está vacía. ¡Ve al Escáner para agregar cosas!</p>}
           </div>
-        </div>
       </div>
     </div>
+  </div>
   );
 };
 

@@ -220,7 +220,24 @@ class ShoppingListViewSet(viewsets.ModelViewSet):
 
         # 4. Devolver la lista actualizada
         serializer = self.get_serializer(shopping_list)
-        return Response(serializer.data)        
+        return Response(serializer.data) 
+
+    @action(detail=True, methods=['post'], url_path='remove-item')
+    def remove_item(self, request, pk=None):
+        shopping_list = self.get_object()
+        item_id = request.data.get('item_id') # ID del ListItem, no del producto
+
+        try:
+            # Buscamos el item específico dentro de esta lista
+            item = ListItem.objects.get(id=item_id, shopping_list=shopping_list)
+            item.delete()
+            
+            # Devolvemos la lista actualizada para que el frontend se refresque solo
+            serializer = self.get_serializer(shopping_list)
+            return Response(serializer.data)
+            
+        except ListItem.DoesNotExist:
+            return Response({"error": "Item no encontrado en esta lista"}, status=404)       
 
 
 class ProductScanView(APIView):
